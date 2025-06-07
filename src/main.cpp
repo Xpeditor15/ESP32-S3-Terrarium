@@ -1,8 +1,3 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <Adafruit_ST7735.h>
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
 #include "main.h"
 
 /*
@@ -18,29 +13,10 @@ SS: 10
 #define TFT_LED 8
 
 #define DHTPIN 21
+#define DHTTYPE DHT22
 
-DHT dht = DHT(DHTPIN, DHT22);
+DHT dht = DHT(DHTPIN, DHTTYPE);
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
-/*void setup() {
-  Serial.begin(115200);
-
-  dht.begin();
-  Serial.println("DHT sensor initialized!");
-
-  pinMode(TFT_LED, OUTPUT);
-  analogWrite(TFT_LED, 200); // Turn on backlight
-
-  tft.initR(INITR_144GREENTAB);
-  tft.setRotation(2);
-
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(1);
-  tft.setCursor(0, 0);
-  tft.println("Hello, World!");
-  Serial.println("TFT initialized!");
-}*/
 
 void setup() {
   Serial.begin(115200);
@@ -48,29 +24,30 @@ void setup() {
   tft.initR(INITR_144GREENTAB);
   tft.setRotation(2);
 
-  tft.fillScreen(ST77XX_BLACK);
   pinMode(TFT_LED, OUTPUT);
   analogWrite(TFT_LED, 200);
-  tft.setTextColor(ST77XX_GREEN);
-  tft.setTextSize(2);
-  tft.setCursor(0, 0);
-  tft.println("Initialized!");
+  char *displayMsg = "Display Ready!";
+  LCDPrint(tft, displayMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
+  //LCDPrint(displayMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
+
   delay(2000);
-  Serial.println("TFT Initialized!");
-  
+
   dht.begin();
-  Serial.println("DHT sensor initialized!");
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.println("DHT sensor initialized!");
+  char *sensorMsg = "DHT Sensor Ready!";
+  LCDPrint(tft, sensorMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
+  //LCDPrint(sensorMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
+  
+  delay(2000);
 }
 
 void loop() {
   delay(3000);
-  displaySensorData();
+  displaySensorData(dht, tft);
+  //displaySensorData();
   Serial.println("Screen updated!");
 }
 
+/*
 float getHumidity() {
   float humidity = dht.readHumidity();
   if (isnan(humidity)) {
@@ -89,39 +66,42 @@ float getTemperature() {
   return temperature;
 }
 
-void clearScreen() {
-  tft.fillScreen(ST77XX_BLACK);
-}
-
 void displaySensorData() {
-  clearScreen();
   float humidity = getHumidity();
   float temperature = getTemperature();
 
-  if (humidity >= 0 && temperature >= 0) {
-    tft.setCursor(0, 20);
-    tft.setTextColor(ST77XX_GREEN);
-    tft.setTextSize(2);
-    tft.print("Humidity: ");
-    tft.print(humidity);
-    tft.println("%");
-    
-    tft.setCursor(0, 60);
-    tft.print("Temp: ");
-    tft.print(temperature);
-    tft.println("C");
-    
-    Serial.print("Humidity: ");
-    Serial.print(humidity);
-    Serial.print("%, Temperature: ");
-    Serial.print(temperature);
-    Serial.println("C");
+  char *humiMsg = "Humidity: ", *tempMsg = "Temp: ";
+  char humiBuffer[10], tempBuffer[10];
+
+  LCDPrint(humiMsg, ST77XX_GREEN, 3, 5, 2, true, true);
+
+  if (humidity == -1) {
+    sprintf(humiBuffer, "Error");
+  } else {
+    sprintf(humiBuffer, "%.2f%%", humidity);
   }
-  else {
-    tft.setCursor(0, 20);
-    tft.setTextColor(ST77XX_RED);
-    tft.setTextSize(2);
-    tft.println("Sensor Error!");
-    Serial.println("Sensor Error!");
+
+  if (temperature == -1) {
+    sprintf(tempBuffer, "Error");
+  } else {
+    sprintf(tempBuffer, "%.1fC", temperature);
   }
+
+  LCDPrint(humiBuffer, ST77XX_GREEN, 3, 22, 2, false, true);
+  LCDPrint(tempMsg, ST77XX_GREEN, 3, 41, 2, false, true);
+  LCDPrint(tempBuffer, ST77XX_GREEN, 3, 60, 2, false, true);
 }
+
+void LCDPrint(char *string, uint16_t color, int x, int y, int size, bool reset, bool newLine) {
+  if (reset) {
+    tft.fillScreen(ST77XX_BLACK);
+  }
+  tft.setTextColor(color);
+  tft.setTextSize(size);
+  tft.setCursor(x, y);
+  if (newLine) {
+    tft.println(string);
+  } else {
+    tft.print(string);
+  }
+}*/
