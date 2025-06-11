@@ -17,16 +17,15 @@ void LCDPrint(Adafruit_ST7735 tft, char *string, uint16_t color, int x, int y, i
     }
 }
 
-
-void displaySensorData(DHT &dht, Adafruit_ST7735 tft) {
-    float temperature = getTemperature(dht);
-    float humidity = getHumidity(dht);
-    
+void displaySensorData(DHT dht, Adafruit_ST7735 tft) {
+    float humidity, temperature;
+    getDHTdata(dht, &humidity, &temperature);
 
     char *humiMsg = "Humidity: ", *tempMsg = "Temp: ";
     char humiBuffer[10], tempBuffer[10];
 
     LCDPrint(tft, humiMsg, ST77XX_GREEN, 3, 5, 2, true, true);
+
     if (humidity == -1) {
         sprintf(humiBuffer, "Error");
     } else {
