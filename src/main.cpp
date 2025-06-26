@@ -15,18 +15,23 @@ SS: 10
 #define DHTPIN 21
 #define DHTTYPE DHT22
 
+#define WAKE_BUTTON 17
+#define MODE_BUTTON 15
+#define LED 5
+
 #define USE_EXT0_WAKEUP 1
 #define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)
-#define WAKEUP_GPIO GPIO_NUM_15
-#define WAKE_BUTTON 15
-#define MODE_BUTTON 17
-#define LED 5
-#define INACTIVITY_TIMEOUT 120000
+#define WAKEUP_GPIO GPIO_NUM_17
+
+#define BUTTON_DEBOUNCE 200
+#define POPUP_DISPLAY_TIME 5000
 
 DHT dht = DHT(DHTPIN, DHTTYPE);
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 volatile unsigned long lastActivityTime = 0;
+volatile unsigned long lastButtonPress = 0;
+volatile unsigned long lastPopupDisplay = 0;
 volatile bool modeChanged = false; //false = automatic sleep mode, true = always-on display
 
 void setup() {
@@ -41,19 +46,20 @@ void setup() {
   char displayMsg[] = "Display Ready!";
   LCDPrint(tft, displayMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
 
-  delay(2000);
+  delay(1000);
 
   dht.begin();
   char sensorMsg[] = "DHT Sensor Ready!";
   LCDPrint(tft, sensorMsg, ST77XX_YELLOW, 5, 5, 2, true, true);
 
   pinMode(WAKE_BUTTON, INPUT_PULLUP);
+  pinMode(MODE_BUTTON, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
 
   attachInterrupt(digitalPinToInterrupt(WAKE_BUTTON), buttonISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(MODE_BUTTON), modeISR, FALLING);
-  lastActivityTime = millis();
-  delay(2000);
+  lastActivityTime = millis(), lastButtonPress = millis();
+  delay(1000);
 
   //Sleep Mode Configs
 #if USE_EXT0_WAKEUP
@@ -62,15 +68,24 @@ void setup() {
   rtc_gpio_pullup_en(WAKEUP_GPIO);
 #endif
 
-  Serial.println("Going to sleep in 3 seconds...");
-  delay(3000);
-  esp_deep_sleep_start();
+  /*esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+    LCDPrint(tft, "Woke up from button", ST77XX_GREEN, 5, 5, 2, true, true);
+    Serial.println("Woke up from button press");
+  }*/
 }
 
 void loop() {
-  delay(200);
-  readPIR(tft);
-  Serial.println("Screen updated!");
+  checkSleepTimer(lastActivityTime, modeChanged);
+
+  if (lastPopupDisplay != 0 && (millis() - lastPopupDisplay < POPUP_DISPLAY_TIME)) {
+    Serial.println("Displaying popup message");
+    delay(1000);
+    return;
+  } else {
+    delay(3000);
+    displaySensorData(dht, tft);
+  }
 }
 
 void IRAM_ATTR buttonISR() {
@@ -78,6 +93,8 @@ void IRAM_ATTR buttonISR() {
 }
 
 void IRAM_ATTR modeISR() {
+  if (millis() - lastButtonPress < BUTTON_DEBOUNCE) return;
+
   if (modeChanged) {
     modeChanged = false;
     Serial.println("Switching to automatic sleep mode");
@@ -88,4 +105,5 @@ void IRAM_ATTR modeISR() {
     LCDPrint(tft, "Always-On Display Mode", ST77XX_GREEN, 5, 5, 2, true, true);
   }
   buttonISR();
+  lastPopupDisplay = millis();
 }

@@ -17,6 +17,30 @@ void LCDPrint(Adafruit_ST7735 tft, char *string, uint16_t color, int x, int y, i
     }
 }
 
+void LCDPrintBetter(Adafruit_ST7735 tft, char *string, char *oldString, uint16_t color, int x, int y, int size, bool reset, bool newLine) {
+    if (reset) {
+        tft.setTextColor(ST77XX_BLACK);
+        tft.setTextSize(size);
+        tft.setCursor(x, y);
+        
+        if (newLine) {
+            tft.println(oldString);
+        } else {
+            tft.print(oldString);
+        }
+    }
+
+    tft.setTextColor(color);
+    tft.setTextSize(size);
+    tft.setCursor(x, y);
+
+    if (newLine) {
+        tft.println(string);
+    } else {
+        tft.print(string);
+    }
+}
+
 void displaySensorData(DHT dht, Adafruit_ST7735 tft) {
     float humidity, temperature;
     getDHTdata(dht, &humidity, &temperature);

@@ -13,5 +13,6 @@ void IRAM_ATTR modeISR();
 void displaySensorData(DHT dht, Adafruit_ST7735 tft);
 void getDHTdata(DHT dht, float *humidity, float *temperature);
 void LCDPrint(Adafruit_ST7735 tft, char *string, uint16_t color, int x, int y, int size, bool reset, bool newLine);
-void readPIR(Adafruit_ST7735 tft);
-void checkSleepTimer(volatile unsigned long lastActivityTime, volatile bool mode)
+void LCDPrintBetter(Adafruit_ST7735 tft, char *string, char *oldString, uint16_t color, int x, int y, int size, bool reset, bool newLine);
+void printWakeupReason();
+void checkSleepTimer(volatile unsigned long lastActivityTime, volatile bool mode);

@@ -1,9 +1,10 @@
 #include "main.h"
 
-#define PUSHBUTTON 15
-#define WAKE_BUTTON 15
-#define MODE_BUTTON 17
-#define INACTIVITY_TIMEOUT 120000
+#define PUSHBUTTON 17
+#define WAKE_BUTTON 17
+#define MODE_BUTTON 15
+
+#define INACTIVITY_TIMEOUT 2*60*1000
 
 int pushbutton = 15;
 int state = LOW;
